@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            dbus-x11 xvfb feh openbox imagemagick x11-apps \
+            gsettings-desktop-schemas dconf-cli
+
+      - name: Ruff
+        run: ruff check src tests
+
+      - name: Ruff format
+        run: ruff format --check src tests
+
+      - name: Build package
+        run: pip install build && python -m build
+
+      - name: Verify editable install (clean venv, outside repo)
+        run: |
+          python -m venv /tmp/otowall-packaging-venv
+          /tmp/otowall-packaging-venv/bin/pip install -e .
+          cd /tmp
+          /tmp/otowall-packaging-venv/bin/python -c "import otowall"
+          /tmp/otowall-packaging-venv/bin/otowall --help
+          /tmp/otowall-packaging-venv/bin/python -m otowall --help
+
+      - name: Tests
+        run: pytest --cov=otowall --cov-report=term-missing -q
+
+      - name: Linux desktop wallpaper centering (Xvfb + feh + mss)
+        run: pytest tests/test_linux_desktop_wallpaper.py -q
+
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,windows]"
+
+      - name: Ruff
+        run: ruff check src tests
+
+      - name: Ruff format
+        run: ruff format --check src tests
+
+      - name: Tests
+        run: pytest --cov=otowall --cov-report=term-missing -q
+
+      - name: Windows winrt optional dependency imports
+        run: pytest tests/test_windows_winrt_deps.py -q
+
+      - name: Windows display enumeration smoke test
+        run: pytest tests/test_platforms_windows_monitors.py::test_real_monitor_enumeration_and_compose -q
+
+      - name: Windows wallpaper restore smoke test
+        run: pytest tests/test_windows_restore.py::test_windows_wallpaper_smoke_snapshot_apply_restore -q
+
+      - name: Windows desktop wallpaper capture verification
+        env:
+          NP_ARTIFACTS_DIR: ${{ runner.temp }}/np-artifacts
+        run: pytest tests/test_windows_desktop_wallpaper.py -q
+
+      - name: Upload desktop verification captures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-desktop-captures
+          path: |
+            ${{ runner.temp }}/np-artifacts/win-desktop-capture-after-fix.png
+          if-no-files-found: warn

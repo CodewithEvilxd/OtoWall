@@ -1,0 +1,125 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "otowall"
+version = "1.1.1"
+description = "Live Retro CRT & Glass album art dynamic wallpaper engine for Spotify, Apple Music, and local media players."
+readme = "README.md"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.12"
+authors = [{ name = "codewithevilxd", email = "codewithevilxd@gmail.com" }]
+keywords = [
+    "spotify",
+    "wallpaper",
+    "desktop-wallpaper",
+    "live-wallpaper",
+    "dynamic-wallpaper",
+    "now-playing",
+    "album-art",
+    "music-visualizer",
+    "retro-crt",
+    "ascii-art",
+    "mpris",
+    "smtc",
+    "windows-customization",
+    "ricing",
+    "aesthetic",
+    "music-player",
+    "otowall",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: MacOS X",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: X11 Applications",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Desktop Environment",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "numpy>=1.26.0,<3",
+    "pillow>=11.0.0,<14",
+    "python-dotenv>=1.0.0,<2",
+    "requests>=2.32.0,<3",
+    "spotipy>=2.24.0,<3",
+]
+
+[project.urls]
+Homepage = "https://github.com/codewithevilxd/OtoWall"
+Repository = "https://github.com/codewithevilxd/OtoWall"
+Issues = "https://github.com/codewithevilxd/OtoWall/issues"
+Documentation = "https://github.com/codewithevilxd/OtoWall#readme"
+
+[project.optional-dependencies]
+macos = ["appscript>=1.2.5,<2"]
+windows = [
+    "winrt-runtime>=3.2.1,<4.1.0; sys_platform == 'win32'",
+    "winrt-Windows.Foundation>=3.2.1,<10.1.0; sys_platform == 'win32'",
+    "winrt-Windows.Foundation.Collections>=3.2.1,<10.1.0; sys_platform == 'win32'",
+    "winrt-Windows.Media.Control>=3.2.1,<10.1.0; sys_platform == 'win32'",
+    "winrt-Windows.Storage.Streams>=3.2.1,<10.1.0; sys_platform == 'win32'",
+]
+linux = ["dbus-next>=0.2.3,<1"]
+dev = [
+    "pytest>=9.1.0,<10",
+    "pytest-cov>=7.1.0,<8",
+    "ruff>=0.9.0,<1",
+    "mss>=9.0.0,<11",
+    "build>=1.2.0,<2",
+    "twine>=7.0.0,<8",
+    "pyinstaller>=6.10.0,<7",
+]
+
+[project.scripts]
+otowall = "otowall.cli:main"
+otowall-windows = "otowall.cli:main_windows"
+otowall-macos = "otowall.cli:main_macos"
+now-playing = "otowall.cli:main"
+now-playing-windows = "otowall.cli:main_windows"
+now-playing-macos = "otowall.cli:main_macos"
+
+[tool.hatch.build]
+sources = ["src"]
+
+[tool.hatch.build.targets.wheel]
+only-packages = true
+
+[tool.hatch.build.targets.editable]
+dev-mode-dirs = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "src"]
+cache_dir = ".venv/.pytest_cache"
+markers = [
+    "integration: optional live desktop-tool tests",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.coverage.run]
+source = ["otowall"]
+branch = false
+parallel = true
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
