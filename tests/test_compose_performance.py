@@ -78,7 +78,12 @@ def test_composed_disk_cache_hit_skips_recompose(tmp_path: Path, caplog):
     cache = ComposedArtCache(tmp_path / "composed")
     cover = make_sample_cover(400)
     track = TrackPlayback("id", "art", "Title", "Artist", True)
-    material = track.composed_art_material_key
+    platform = FakePlatform(wallpaper=tmp_path / "orig.jpg")
+    (tmp_path / "orig.jpg").write_bytes(b"orig")
+    runner = make_runner(tmp_path, platform=platform)
+    runner._composed_cache = cache
+
+    material = f"{runner._style}|{track.composed_art_material_key}"
     composed = compose_wallpaper(
         cover,
         title=track.title,
@@ -91,10 +96,6 @@ def test_composed_disk_cache_hit_skips_recompose(tmp_path: Path, caplog):
     cached_path = cache.put(track.track_id, material, 1920, 1080, scratch)
     assert cache.get(track.track_id, material, 1920, 1080) == cached_path
 
-    platform = FakePlatform(wallpaper=tmp_path / "orig.jpg")
-    (tmp_path / "orig.jpg").write_bytes(b"orig")
-    runner = make_runner(tmp_path, platform=platform)
-    runner._composed_cache = cache
     with (
         patch(
             "otowall.runner.fetch_playback_for_runner",

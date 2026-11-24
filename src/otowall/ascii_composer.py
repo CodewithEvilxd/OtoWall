@@ -3,9 +3,9 @@
 Features:
 - Full-resolution desktop wallpaper generation (1920x1080 or dynamic display size).
 - 3 Pure, Gorgeous, Curated Retro Background Styles:
-  1. Pop-Art Halftone Screen Clouds (Reference Image 1: crisp clean sky, round halftone cloud dots)
-  2. Manga Screentone Dither Clouds (Reference Image 2: classic retro manga screentone cumulus clouds)
-  3. Original Retro ASCII / Bayer Dither Clouds (Original procedural 8x8 Bayer dot-dithered cumulus clouds)
+  1. Pop-Art Halftone Screen Clouds (clean sky, round halftone cloud dots)
+  2. Manga Screentone Dither Clouds (classic retro manga screentone cumulus clouds)
+  3. Original Retro ASCII / Bayer Dither Clouds (procedural 8x8 Bayer dot-dithered clouds)
 - True Dynamic Color Harmonization:
   Accurately extracts the dominant vibrant hue directly from the album cover art (purple, crimson,
   rose, amber, emerald, sky blue, etc.) and tints the sky, cloud shadows, and accents with zero
@@ -29,7 +29,6 @@ from __future__ import annotations
 import hashlib
 import math
 from pathlib import Path
-from typing import Callable, Tuple
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -37,16 +36,22 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 FONTS_DIR = Path(__file__).parent / "fonts"
 ASSETS_DIR = Path(__file__).parent / "assets"
 
-BAYER_8 = np.array([
-    [ 0, 32,  8, 40,  2, 34, 10, 42],
-    [48, 16, 56, 24, 50, 18, 58, 26],
-    [12, 44,  4, 36, 14, 46,  6, 38],
-    [60, 28, 52, 20, 62, 30, 54, 22],
-    [ 3, 35, 11, 43,  1, 33,  9, 41],
-    [51, 19, 59, 27, 49, 17, 57, 25],
-    [15, 47,  7, 39, 13, 45,  5, 37],
-    [63, 31, 55, 23, 61, 29, 53, 21],
-], dtype=float) / 64.0
+BAYER_8 = (
+    np.array(
+        [
+            [0, 32, 8, 40, 2, 34, 10, 42],
+            [48, 16, 56, 24, 50, 18, 58, 26],
+            [12, 44, 4, 36, 14, 46, 6, 38],
+            [60, 28, 52, 20, 62, 30, 54, 22],
+            [3, 35, 11, 43, 1, 33, 9, 41],
+            [51, 19, 59, 27, 49, 17, 57, 25],
+            [15, 47, 7, 39, 13, 45, 5, 37],
+            [63, 31, 55, 23, 61, 29, 53, 21],
+        ],
+        dtype=float,
+    )
+    / 64.0
+)
 
 ASCII_RAMP = " .:-=+*#%@"
 ASCII_BLOCKS = " ░▒▓█"
@@ -62,6 +67,7 @@ def load_font(name: str, size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageF
             continue
     try:
         import os
+
         sys_font = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts" / name
         if sys_font.is_file():
             return ImageFont.truetype(str(sys_font), size)
@@ -82,18 +88,22 @@ def extract_cover_palette(
     small = cover.convert("RGB").resize((128, 128), Image.Resampling.LANCZOS)
     q = small.quantize(colors=16, method=Image.Quantize.MEDIANCUT)
     raw_pal = q.getpalette() or []
-    colors = [tuple(raw_pal[i:i+3]) for i in range(0, min(len(raw_pal), 48), 3) if len(raw_pal[i:i+3]) == 3]
-    counts = q.histogram()[:len(colors)]
+    colors = [
+        tuple(raw_pal[i : i + 3])
+        for i in range(0, min(len(raw_pal), 48), 3)
+        if len(raw_pal[i : i + 3]) == 3
+    ]
+    counts = q.histogram()[: len(colors)]
 
     scored = []
-    for c, count in zip(colors, counts):
+    for c, count in zip(colors, counts, strict=False):
         r, g, b = c
         max_c = max(r, g, b)
         min_c = min(r, g, b)
         sat = (max_c - min_c) / max(max_c, 1)
         lum = 0.299 * r + 0.587 * g + 0.114 * b
         if 20 <= lum <= 240:
-            score = (sat ** 1.2) * (count ** 0.5) * (1.0 - abs(lum - 128) / 160.0)
+            score = (sat**1.2) * (count**0.5) * (1.0 - abs(lum - 128) / 160.0)
             scored.append((score, c, lum, sat))
 
     if not scored:
@@ -126,6 +136,7 @@ def extract_cover_palette(
 # 3 CURATED, HIGH-CRAFT RETRO CLOUD BACKGROUNDS
 # ─────────────────────────────────────────────────────────────
 
+
 def bg_halftone_manga_clouds(
     w: int,
     h: int,
@@ -135,7 +146,7 @@ def bg_halftone_manga_clouds(
     accent: tuple[int, int, int],
     seed: int = 101,
 ) -> Image.Image:
-    """Style 1: Pop-Art Halftone Clouds (Reference Image 1: clean sky, round halftone cloud dots)."""
+    """Style 1: Pop-Art Halftone Clouds (clean sky, round halftone cloud dots)."""
     asset_file = ASSETS_DIR / "halftone_clouds_1.jpg"
     if asset_file.is_file():
         try:
@@ -264,7 +275,7 @@ def bg_screentone_clouds(
     accent: tuple[int, int, int],
     seed: int = 202,
 ) -> Image.Image:
-    """Style 2: Manga Screentone Dither Clouds (Reference Image 2: classic retro manga screentone)."""
+    """Style 2: Manga Screentone Dither Clouds (retro manga screentone cumulus clouds)."""
     asset_file = ASSETS_DIR / "halftone_clouds_2.jpg"
     if asset_file.is_file():
         try:
@@ -284,7 +295,9 @@ def bg_screentone_clouds(
             lum = 0.299 * r + 0.587 * g + 0.114 * b
 
             # Pure white cloud mask: high luminance AND low chroma difference
-            is_cloud = np.clip((lum - 220.0) / 30.0, 0.0, 1.0) * (1.0 - np.clip((diff - 8.0) / 25.0, 0.0, 1.0))
+            is_cloud = np.clip((lum - 220.0) / 30.0, 0.0, 1.0) * (
+                1.0 - np.clip((diff - 8.0) / 25.0, 0.0, 1.0)
+            )
             is_cloud = is_cloud[:, :, None]
 
             # In the sky, map dark screentone dots to deep sky and inter-dot sky to soft shadow tint
@@ -333,7 +346,7 @@ def bg_original_ascii_clouds(
         ry = int(rng.uniform(16, 38))
         dd.ellipse([cx - rx, cy - ry, cx + rx, cy + ry], fill=int(rng.uniform(225, 255)))
 
-    for i in range(18):
+    for _i in range(18):
         cx = int(cols * rng.uniform(0.05, 0.95))
         cy = int(rows * rng.uniform(0.35, 0.65))
         rad = int(rng.uniform(14, 34))
@@ -384,8 +397,8 @@ def bg_original_ascii_clouds(
 # Curated background generator list strictly containing the user's approved cloud styles
 BG_GENERATORS = [
     bg_halftone_manga_clouds,  # 0: Pop-Art Halftone Screen Clouds (Reference Image 1)
-    bg_screentone_clouds,       # 1: Manga Screentone Dither Clouds (Reference Image 2)
-    bg_original_ascii_clouds,   # 2: Original Retro ASCII / Bayer Dither Clouds
+    bg_screentone_clouds,  # 1: Manga Screentone Dither Clouds (Reference Image 2)
+    bg_original_ascii_clouds,  # 2: Original Retro ASCII / Bayer Dither Clouds
 ]
 
 
@@ -410,6 +423,7 @@ def choose_bg_style_index(title: str, artist: str, track_id: str = "") -> int:
 # CUTE & ATTRACTIVE RETRO ASCII CRT TV CHASSIS
 # ─────────────────────────────────────────────────────────────
 
+
 def draw_cute_ascii_tv(
     canvas: Image.Image,
     tv_rect: tuple[int, int, int, int],
@@ -417,7 +431,7 @@ def draw_cute_ascii_tv(
     scale: float,
     accent: tuple[int, int, int],
 ) -> None:
-    """Render a charming, cute retro ASCII CRT television with rabbit ears, dials, and tactile bezel."""
+    """Render a charming retro ASCII CRT television with rabbit ears, dials, and tactile bezel."""
     tx, ty, tx2, ty2 = tv_rect
     tv_w, tv_h = tx2 - tx, ty2 - ty
     sx, sy, sx2, sy2 = screen_rect
@@ -435,14 +449,23 @@ def draw_cute_ascii_tv(
     shadow_img = Image.new("RGBA", (tv_w + shadow_pad * 2, tv_h + shadow_pad * 2), (0, 0, 0, 0))
     s_draw = ImageDraw.Draw(shadow_img)
     s_draw.rounded_rectangle(
-        [shadow_pad + int(16 * scale), shadow_pad + int(120 * scale),
-         shadow_pad + tv_w - int(16 * scale), shadow_pad + tv_h - int(55 * scale)],
+        [
+            shadow_pad + int(16 * scale),
+            shadow_pad + int(120 * scale),
+            shadow_pad + tv_w - int(16 * scale),
+            shadow_pad + tv_h - int(55 * scale),
+        ],
         radius=body_radius,
         fill=(0, 0, 0, 130),
     )
     shadow_blur = shadow_img.filter(ImageFilter.GaussianBlur(max(2, shadow_pad * 0.7)))
     canvas.paste(
-        Image.alpha_composite(canvas.crop((tx - shadow_pad, ty - shadow_pad, tx2 + shadow_pad, ty2 + shadow_pad)).convert("RGBA"), shadow_blur).convert("RGB"),
+        Image.alpha_composite(
+            canvas.crop(
+                (tx - shadow_pad, ty - shadow_pad, tx2 + shadow_pad, ty2 + shadow_pad)
+            ).convert("RGBA"),
+            shadow_blur,
+        ).convert("RGB"),
         (tx - shadow_pad, ty - shadow_pad),
     )
 
@@ -468,22 +491,34 @@ def draw_cute_ascii_tv(
     leg_highlight = (185, 155, 120)
 
     # Left leg
-    draw.polygon([
-        (tx + int(90 * scale), foot_top),
-        (tx + int(155 * scale), foot_top),
-        (tx + int(120 * scale), foot_bot),
-        (tx + int(55 * scale), foot_bot),
-    ], fill=leg_wood, outline=leg_highlight)
-    draw.rectangle([tx + int(55 * scale), foot_bot - 4, tx + int(120 * scale), foot_bot], fill=(18, 18, 20))
+    draw.polygon(
+        [
+            (tx + int(90 * scale), foot_top),
+            (tx + int(155 * scale), foot_top),
+            (tx + int(120 * scale), foot_bot),
+            (tx + int(55 * scale), foot_bot),
+        ],
+        fill=leg_wood,
+        outline=leg_highlight,
+    )
+    draw.rectangle(
+        [tx + int(55 * scale), foot_bot - 4, tx + int(120 * scale), foot_bot], fill=(18, 18, 20)
+    )
 
     # Right leg
-    draw.polygon([
-        (tx2 - int(155 * scale), foot_top),
-        (tx2 - int(90 * scale), foot_top),
-        (tx2 - int(55 * scale), foot_bot),
-        (tx2 - int(120 * scale), foot_bot),
-    ], fill=leg_wood, outline=leg_highlight)
-    draw.rectangle([tx2 - int(120 * scale), foot_bot - 4, tx2 - int(55 * scale), foot_bot], fill=(18, 18, 20))
+    draw.polygon(
+        [
+            (tx2 - int(155 * scale), foot_top),
+            (tx2 - int(90 * scale), foot_top),
+            (tx2 - int(55 * scale), foot_bot),
+            (tx2 - int(120 * scale), foot_bot),
+        ],
+        fill=leg_wood,
+        outline=leg_highlight,
+    )
+    draw.rectangle(
+        [tx2 - int(120 * scale), foot_bot - 4, tx2 - int(55 * scale), foot_bot], fill=(18, 18, 20)
+    )
 
     # 4. Cute Symmetrical Rabbit-Ear Antennas with Glowing Metallic Ball Tips & Signal Sparks!
     ant_cx = tx + tv_w // 2 - int(25 * scale)
@@ -494,36 +529,88 @@ def draw_cute_ascii_tv(
     handle_top = body_top - handle_h
     draw.rounded_rectangle(
         [ant_cx - handle_w // 2, handle_top, ant_cx + handle_w // 2, body_top + 2],
-        radius=int(6 * scale), fill=(32, 36, 48), outline=(85, 96, 120), width=max(1, int(1.5 * scale))
+        radius=int(6 * scale),
+        fill=(32, 36, 48),
+        outline=(85, 96, 120),
+        width=max(1, int(1.5 * scale)),
     )
     # Handle rivets
-    draw.ellipse([ant_cx - handle_w // 2 + 4, handle_top + 4, ant_cx - handle_w // 2 + 10, handle_top + 10], fill=(180, 190, 210))
-    draw.ellipse([ant_cx + handle_w // 2 - 10, handle_top + 4, ant_cx + handle_w // 2 - 4, handle_top + 10], fill=(180, 190, 210))
+    draw.ellipse(
+        [ant_cx - handle_w // 2 + 4, handle_top + 4, ant_cx - handle_w // 2 + 10, handle_top + 10],
+        fill=(180, 190, 210),
+    )
+    draw.ellipse(
+        [ant_cx + handle_w // 2 - 10, handle_top + 4, ant_cx + handle_w // 2 - 4, handle_top + 10],
+        fill=(180, 190, 210),
+    )
 
     # Antenna mounts at top of cabinet (knurled chrome sockets)
-    draw.rounded_rectangle([ant_cx - int(78 * scale), body_top - int(8 * scale), ant_cx - int(52 * scale), body_top + 2], radius=2, fill=(115, 125, 145))
-    draw.rounded_rectangle([ant_cx + int(52 * scale), body_top - int(8 * scale), ant_cx + int(78 * scale), body_top + 2], radius=2, fill=(115, 125, 145))
+    draw.rounded_rectangle(
+        [
+            ant_cx - int(78 * scale),
+            body_top - int(8 * scale),
+            ant_cx - int(52 * scale),
+            body_top + 2,
+        ],
+        radius=2,
+        fill=(115, 125, 145),
+    )
+    draw.rounded_rectangle(
+        [
+            ant_cx + int(52 * scale),
+            body_top - int(8 * scale),
+            ant_cx + int(78 * scale),
+            body_top + 2,
+        ],
+        radius=2,
+        fill=(115, 125, 145),
+    )
 
     # Left antenna rod (taller, proud V-shape)
     l_top_x = ant_cx - int(140 * scale)
     l_top_y = ty + int(8 * scale)
-    draw.line([(ant_cx - int(65 * scale), body_top - int(6 * scale)), (l_top_x, l_top_y)], fill=(195, 210, 235), width=max(2, int(4 * scale)))
+    draw.line(
+        [(ant_cx - int(65 * scale), body_top - int(6 * scale)), (l_top_x, l_top_y)],
+        fill=(195, 210, 235),
+        width=max(2, int(4 * scale)),
+    )
     # Right antenna rod
     r_top_x = ant_cx + int(140 * scale)
     r_top_y = ty + int(8 * scale)
-    draw.line([(ant_cx + int(65 * scale), body_top - int(6 * scale)), (r_top_x, r_top_y)], fill=(195, 210, 235), width=max(2, int(4 * scale)))
+    draw.line(
+        [(ant_cx + int(65 * scale), body_top - int(6 * scale)), (r_top_x, r_top_y)],
+        fill=(195, 210, 235),
+        width=max(2, int(4 * scale)),
+    )
 
     # Metallic Golden Ball Tips (draw.ellipse with specular highlight)
     tip_r = max(5, int(8.5 * scale))
     for tx_tip, ty_tip in [(l_top_x, l_top_y), (r_top_x, r_top_y)]:
-        draw.ellipse([tx_tip - tip_r - 2, ty_tip - tip_r - 2, tx_tip + tip_r + 2, ty_tip + tip_r + 2], fill=(255, 210, 50, 140))
-        draw.ellipse([tx_tip - tip_r, ty_tip - tip_r, tx_tip + tip_r, ty_tip + tip_r], fill=(255, 225, 75))
+        draw.ellipse(
+            [tx_tip - tip_r - 2, ty_tip - tip_r - 2, tx_tip + tip_r + 2, ty_tip + tip_r + 2],
+            fill=(255, 210, 50, 140),
+        )
+        draw.ellipse(
+            [tx_tip - tip_r, ty_tip - tip_r, tx_tip + tip_r, ty_tip + tip_r], fill=(255, 225, 75)
+        )
         draw.ellipse([tx_tip - tip_r + 2, ty_tip - tip_r + 2, tx_tip, ty_tip], fill=(255, 255, 255))
 
     # Cute ASCII Radio Signal waves around antenna tips: * . ( (   ) ) . *
     font_signal = load_font("consolab.ttf", max(11, int(14 * scale)))
-    draw.text((l_top_x - int(20 * scale), l_top_y), "* . ( (", fill=(255, 230, 100), font=font_signal, anchor="rm")
-    draw.text((r_top_x + int(20 * scale), r_top_y), ") ) . *", fill=(255, 230, 100), font=font_signal, anchor="lm")
+    draw.text(
+        (l_top_x - int(20 * scale), l_top_y),
+        "* . ( (",
+        fill=(255, 230, 100),
+        font=font_signal,
+        anchor="rm",
+    )
+    draw.text(
+        (r_top_x + int(20 * scale), r_top_y),
+        ") ) . *",
+        fill=(255, 230, 100),
+        font=font_signal,
+        anchor="lm",
+    )
 
     # 5. Tactile Shaded ASCII Bezel Texture across TV Face
     cols = 72
@@ -542,7 +629,9 @@ def draw_cute_ascii_tv(
 
             if not (body_left + 6 <= px <= body_right - 6 and body_top + 6 <= py <= body_bot - 6):
                 continue
-            if (sx - int(6 * scale) <= px <= sx2 + int(6 * scale) and sy - int(6 * scale) <= py <= sy2 + int(6 * scale)):
+            if sx - int(6 * scale) <= px <= sx2 + int(6 * scale) and sy - int(
+                6 * scale
+            ) <= py <= sy2 + int(6 * scale):
                 continue
             if py >= body_bot - int(38 * scale):
                 continue
@@ -560,7 +649,12 @@ def draw_cute_ascii_tv(
                 ch = ASCII_RAMP[max(3, pat)]
                 alpha = 195
 
-            ad.text((int(tx + c * cell_w), int(ty + r * cell_h)), ch, fill=(185, 195, 225, alpha), font=font_ascii)
+            ad.text(
+                (int(tx + c * cell_w), int(ty + r * cell_h)),
+                ch,
+                fill=(185, 195, 225, alpha),
+                font=font_ascii,
+            )
 
     canvas.paste(Image.alpha_composite(canvas.convert("RGBA"), ascii_layer).convert("RGB"), (0, 0))
 
@@ -573,7 +667,9 @@ def draw_cute_ascii_tv(
         (body_left + screw_pad, body_bot - screw_pad),
         (body_right - screw_pad, body_bot - screw_pad),
     ]:
-        draw.ellipse([scr_x - 7, scr_y - 7, scr_x + 7, scr_y + 7], fill=(16, 18, 24), outline=(85, 95, 120))
+        draw.ellipse(
+            [scr_x - 7, scr_y - 7, scr_x + 7, scr_y + 7], fill=(16, 18, 24), outline=(85, 95, 120)
+        )
         draw.text((scr_x, scr_y), "+", fill=(190, 205, 230), font=font_screw, anchor="mm")
 
     # 6. Cute Symmetrical Top Bezel Badges (framing the antenna sockets)
@@ -601,29 +697,98 @@ def draw_cute_ascii_tv(
     # Channel Dial (CH)
     dial1_cy = body_top + int(82 * scale)
     dial_r = int(26 * scale)
-    draw.ellipse([ctrl_cx - dial_r - 3, dial1_cy - dial_r - 3, ctrl_cx + dial_r + 3, dial1_cy + dial_r + 3], fill=(14, 16, 22))
-    draw.ellipse([ctrl_cx - dial_r, dial1_cy - dial_r, ctrl_cx + dial_r, dial1_cy + dial_r], fill=(38, 42, 56), outline=(160, 175, 205), width=max(1, int(1.5 * scale)))
-    draw.line([ctrl_cx, dial1_cy - dial_r + int(4 * scale), ctrl_cx, dial1_cy - int(6 * scale)], fill=(255, 255, 255), width=max(2, int(2.5 * scale)))
-    draw.text((ctrl_cx, dial1_cy - dial_r - int(13 * scale)), "CH-04", fill=(210, 225, 250), font=font_knob, anchor="mm")
+    draw.ellipse(
+        [ctrl_cx - dial_r - 3, dial1_cy - dial_r - 3, ctrl_cx + dial_r + 3, dial1_cy + dial_r + 3],
+        fill=(14, 16, 22),
+    )
+    draw.ellipse(
+        [ctrl_cx - dial_r, dial1_cy - dial_r, ctrl_cx + dial_r, dial1_cy + dial_r],
+        fill=(38, 42, 56),
+        outline=(160, 175, 205),
+        width=max(1, int(1.5 * scale)),
+    )
+    draw.line(
+        [ctrl_cx, dial1_cy - dial_r + int(4 * scale), ctrl_cx, dial1_cy - int(6 * scale)],
+        fill=(255, 255, 255),
+        width=max(2, int(2.5 * scale)),
+    )
+    draw.text(
+        (ctrl_cx, dial1_cy - dial_r - int(13 * scale)),
+        "CH-04",
+        fill=(210, 225, 250),
+        font=font_knob,
+        anchor="mm",
+    )
 
     # Volume Dial (VOL with gauge)
     dial2_cy = dial1_cy + int(96 * scale)
-    draw.ellipse([ctrl_cx - dial_r - 3, dial2_cy - dial_r - 3, ctrl_cx + dial_r + 3, dial2_cy + dial_r + 3], fill=(14, 16, 22))
-    draw.ellipse([ctrl_cx - dial_r, dial2_cy - dial_r, ctrl_cx + dial_r, dial2_cy + dial_r], fill=(38, 42, 56), outline=(160, 175, 205), width=max(1, int(1.5 * scale)))
-    draw.line([ctrl_cx - int(4 * scale), dial2_cy - dial_r + int(6 * scale), ctrl_cx + int(8 * scale), dial2_cy - int(4 * scale)], fill=(255, 255, 255), width=max(2, int(2.5 * scale)))
-    draw.text((ctrl_cx, dial2_cy - dial_r - int(13 * scale)), "VOL", fill=(210, 225, 250), font=font_knob, anchor="mm")
+    draw.ellipse(
+        [ctrl_cx - dial_r - 3, dial2_cy - dial_r - 3, ctrl_cx + dial_r + 3, dial2_cy + dial_r + 3],
+        fill=(14, 16, 22),
+    )
+    draw.ellipse(
+        [ctrl_cx - dial_r, dial2_cy - dial_r, ctrl_cx + dial_r, dial2_cy + dial_r],
+        fill=(38, 42, 56),
+        outline=(160, 175, 205),
+        width=max(1, int(1.5 * scale)),
+    )
+    draw.line(
+        [
+            ctrl_cx - int(4 * scale),
+            dial2_cy - dial_r + int(6 * scale),
+            ctrl_cx + int(8 * scale),
+            dial2_cy - int(4 * scale),
+        ],
+        fill=(255, 255, 255),
+        width=max(2, int(2.5 * scale)),
+    )
+    draw.text(
+        (ctrl_cx, dial2_cy - dial_r - int(13 * scale)),
+        "VOL",
+        fill=(210, 225, 250),
+        font=font_knob,
+        anchor="mm",
+    )
 
     # Cute Power Switch & Vibrant Phosphor Green LED with Soft Luminous Halo
     pwr_y = dial2_cy + int(60 * scale)
-    draw.rounded_rectangle([ctrl_cx - int(15 * scale), pwr_y - int(9 * scale), ctrl_cx + int(15 * scale), pwr_y + int(9 * scale)], radius=int(3 * scale), fill=(16, 18, 24), outline=(120, 130, 155), width=1)
-    draw.text((ctrl_cx, pwr_y), "POWER", fill=(200, 210, 235), font=load_font("consolab.ttf", max(8, int(9 * scale))), anchor="mm")
+    draw.rounded_rectangle(
+        [
+            ctrl_cx - int(15 * scale),
+            pwr_y - int(9 * scale),
+            ctrl_cx + int(15 * scale),
+            pwr_y + int(9 * scale),
+        ],
+        radius=int(3 * scale),
+        fill=(16, 18, 24),
+        outline=(120, 130, 155),
+        width=1,
+    )
+    draw.text(
+        (ctrl_cx, pwr_y),
+        "POWER",
+        fill=(200, 210, 235),
+        font=load_font("consolab.ttf", max(8, int(9 * scale))),
+        anchor="mm",
+    )
 
     led_y = pwr_y + int(24 * scale)
     led_r = max(4, int(5 * scale))
-    draw.ellipse([ctrl_cx - led_r - 4, led_y - led_r - 4, ctrl_cx + led_r + 4, led_y + led_r + 4], fill=(20, 160, 80))
-    draw.ellipse([ctrl_cx - led_r, led_y - led_r, ctrl_cx + led_r, led_y + led_r], fill=(50, 255, 140))
+    draw.ellipse(
+        [ctrl_cx - led_r - 4, led_y - led_r - 4, ctrl_cx + led_r + 4, led_y + led_r + 4],
+        fill=(20, 160, 80),
+    )
+    draw.ellipse(
+        [ctrl_cx - led_r, led_y - led_r, ctrl_cx + led_r, led_y + led_r], fill=(50, 255, 140)
+    )
     draw.ellipse([ctrl_cx - 2, led_y - 2, ctrl_cx + 2, led_y + 2], fill=(200, 255, 230))
-    draw.text((ctrl_cx + int(16 * scale), led_y), "ON", fill=(50, 255, 140), font=load_font("consolab.ttf", max(8, int(9 * scale))), anchor="lm")
+    draw.text(
+        (ctrl_cx + int(16 * scale), led_y),
+        "ON",
+        fill=(50, 255, 140),
+        font=load_font("consolab.ttf", max(8, int(9 * scale))),
+        anchor="lm",
+    )
 
     # Speaker Louver Grille (8 horizontal slots)
     speaker_top = led_y + int(28 * scale)
@@ -632,12 +797,24 @@ def draw_cute_ascii_tv(
     slot_h = max(2, int(2.5 * scale))
     for i in range(8):
         sy_slot = speaker_top + i * slot_gap
-        draw.rounded_rectangle([ctrl_cx - slot_w // 2, sy_slot, ctrl_cx + slot_w // 2, sy_slot + slot_h], radius=1, fill=(14, 16, 22))
+        draw.rounded_rectangle(
+            [ctrl_cx - slot_w // 2, sy_slot, ctrl_cx + slot_w // 2, sy_slot + slot_h],
+            radius=1,
+            fill=(14, 16, 22),
+        )
 
     # Cute AUX / Headphone jack
     aux_y = speaker_top + 8 * slot_gap + int(10 * scale)
-    draw.ellipse([ctrl_cx - 5, aux_y - 5, ctrl_cx + 5, aux_y + 5], fill=(10, 12, 16), outline=(90, 100, 120))
-    draw.text((ctrl_cx, aux_y + int(10 * scale)), "PHONES", fill=(150, 160, 185), font=load_font("consolab.ttf", max(7, int(8 * scale))), anchor="mm")
+    draw.ellipse(
+        [ctrl_cx - 5, aux_y - 5, ctrl_cx + 5, aux_y + 5], fill=(10, 12, 16), outline=(90, 100, 120)
+    )
+    draw.text(
+        (ctrl_cx, aux_y + int(10 * scale)),
+        "PHONES",
+        fill=(150, 160, 185),
+        font=load_font("consolab.ttf", max(7, int(8 * scale))),
+        anchor="mm",
+    )
 
     # 8. Thick 3D Molded CRT Picture Tube Bezel (Deep recessed frame)
     bezel_pad = int(14 * scale)
@@ -750,7 +927,7 @@ def compose_wallpaper(
     wb = wx * (1.0 - wy)
     wc = (1.0 - wx) * wy
     wd = wx * wy
-    curved_arr = (wa * arr[y0, x0] + wb * arr[y0, x1] + wc * arr[y1, x0] + wd * arr[y1, x1])
+    curved_arr = wa * arr[y0, x0] + wb * arr[y0, x1] + wc * arr[y1, x0] + wd * arr[y1, x1]
 
     # 3. CRT Radial Vignette: natural edge & corner phosphor light falloff
     vig = np.clip(1.0 - 0.32 * r2, 0.45, 1.0)[:, :, None]
@@ -760,7 +937,7 @@ def compose_wallpaper(
     rgb_mask = np.ones((sc_h, sc_w, 3), dtype=float)
     for c_idx in range(3):
         rgb_mask[:, c_idx::3, c_idx] = 1.05
-        rgb_mask[:, (c_idx + 1)::3, c_idx] = 0.95
+        rgb_mask[:, (c_idx + 1) :: 3, c_idx] = 0.95
     curved_arr = np.clip(curved_arr * rgb_mask, 0, 255)
 
     # 5. Horizontal Raster Scanlines: authentic electron beam scanlines
@@ -777,7 +954,7 @@ def compose_wallpaper(
     sh_depth = int(24 * scale)
     for i in range(sh_depth):
         t = i / float(sh_depth)
-        alpha = int(140 * (1.0 - t)**1.4)
+        alpha = int(140 * (1.0 - t) ** 1.4)
         is_d.rounded_rectangle(
             [i, i, sc_w - 1 - i, sc_h - 1 - i],
             radius=int(22 * scale) - i // 2,
@@ -811,8 +988,15 @@ def compose_wallpaper(
     osd_y = int(20 * scale)
     od.text((osd_x + 1, osd_y + 1), "CH-04  STEREO", fill=(0, 0, 0, 200), font=font_osd)
     od.text((osd_x, osd_y), "CH-04  STEREO", fill=(60, 255, 140, 230), font=font_osd)
-    od.text((osd_x + 1, osd_y + int(16 * scale) + 1), "REC ● PLAY", fill=(0, 0, 0, 180), font=font_osd_sm)
-    od.text((osd_x, osd_y + int(16 * scale)), "REC ● PLAY", fill=(50, 240, 130, 210), font=font_osd_sm)
+    od.text(
+        (osd_x + 1, osd_y + int(16 * scale) + 1),
+        "REC ● PLAY",
+        fill=(0, 0, 0, 180),
+        font=font_osd_sm,
+    )
+    od.text(
+        (osd_x, osd_y + int(16 * scale)), "REC ● PLAY", fill=(50, 240, 130, 210), font=font_osd_sm
+    )
     screen_canvas = Image.alpha_composite(screen_canvas, osd_layer)
 
     # 9. Clean Lower-Third Frosted Acrylic Song Card with subtle glass bevel
@@ -838,17 +1022,43 @@ def compose_wallpaper(
         font_title = load_font("Inter-Bold.ttf", max(14, int(20 * scale)))
         font_artist = load_font("Inter-Medium.ttf", max(11, int(14 * scale)))
 
-        cd.text((sc_w // 2 + 1, card_y + int(24 * scale) + 1), clean_title, fill=(0, 0, 0, 220), font=font_title, anchor="mm")
-        cd.text((sc_w // 2, card_y + int(24 * scale)), clean_title, fill=(255, 255, 255, 255), font=font_title, anchor="mm")
+        cd.text(
+            (sc_w // 2 + 1, card_y + int(24 * scale) + 1),
+            clean_title,
+            fill=(0, 0, 0, 220),
+            font=font_title,
+            anchor="mm",
+        )
+        cd.text(
+            (sc_w // 2, card_y + int(24 * scale)),
+            clean_title,
+            fill=(255, 255, 255, 255),
+            font=font_title,
+            anchor="mm",
+        )
 
-        cd.text((sc_w // 2 + 1, card_y + int(50 * scale) + 1), clean_artist, fill=(0, 0, 0, 200), font=font_artist, anchor="mm")
-        cd.text((sc_w // 2, card_y + int(50 * scale)), clean_artist, fill=(185, 210, 240, 240), font=font_artist, anchor="mm")
+        cd.text(
+            (sc_w // 2 + 1, card_y + int(50 * scale) + 1),
+            clean_artist,
+            fill=(0, 0, 0, 200),
+            font=font_artist,
+            anchor="mm",
+        )
+        cd.text(
+            (sc_w // 2, card_y + int(50 * scale)),
+            clean_artist,
+            fill=(185, 210, 240, 240),
+            font=font_artist,
+            anchor="mm",
+        )
 
         screen_canvas = Image.alpha_composite(screen_canvas, card_layer)
 
     # 10. Bulbous Pillow Screen Mask
     screen_mask = Image.new("L", (sc_w, sc_h), 0)
-    ImageDraw.Draw(screen_mask).rounded_rectangle([0, 0, sc_w, sc_h], radius=int(26 * scale), fill=255)
+    ImageDraw.Draw(screen_mask).rounded_rectangle(
+        [0, 0, sc_w, sc_h], radius=int(26 * scale), fill=255
+    )
 
     wall_rgba = wallpaper.convert("RGBA")
     screen_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
@@ -872,4 +1082,6 @@ def generate_dither_clouds(
 ) -> Image.Image:
     """Backward compatibility wrapper for default cloud background."""
     accent = (40, 180, 240)
-    return bg_original_ascii_clouds(width, height, sky_color, cloud_shadow, cloud_light, accent, seed)
+    return bg_original_ascii_clouds(
+        width, height, sky_color, cloud_shadow, cloud_light, accent, seed
+    )

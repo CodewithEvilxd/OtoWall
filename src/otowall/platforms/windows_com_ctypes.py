@@ -41,6 +41,8 @@ class _COM_RECT(ctypes.Structure):
         ("right", ctypes.c_long),
         ("bottom", ctypes.c_long),
     ]
+
+
 _VTABLE_GET_WALLPAPER = 4
 
 _com_initialized = False

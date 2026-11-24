@@ -125,7 +125,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--style",
         choices=("ascii_crt", "glass"),
         default=None,
-        help="Wallpaper layout style: 'ascii_crt' (retro ASCII CRT TV with dither clouds) or 'glass' (liquid glass panel).",
+        help=(
+            "Wallpaper layout style: 'ascii_crt' (retro ASCII CRT TV with dither clouds) "
+            "or 'glass' (liquid glass panel)."
+        ),
     )
 
     restore_parser = subparsers.add_parser(

@@ -801,7 +801,6 @@ def compose_wallpaper(
     """Build a wallpaper image at ``width`` x ``height``."""
     if width <= 0 or height <= 0:
         raise ValueError(f"Wallpaper size must be positive, got {width}x{height}")
-    import os
 
     chosen_style = (style or "").strip().lower()
     if chosen_style in {"ascii", "ascii_crt", "crt"}:

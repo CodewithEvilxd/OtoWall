@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import ctypes
 import logging
 import os
@@ -453,10 +454,8 @@ def apply_windows_restore_snapshot(
         return
 
     _apply_spi_wallpaper(path_str)
-    try:
+    with contextlib.suppress(Exception):
         set_wallpaper_primary(path)
-    except Exception:
-        pass
     _restore_desktop_style(snapshot)
 
     if background_type in {BACKGROUND_SLIDESHOW, BACKGROUND_SPOTLIGHT}:

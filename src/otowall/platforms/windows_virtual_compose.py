@@ -41,6 +41,7 @@ def compose_virtual_desktop_wallpaper(
     canvas_w, canvas_h = compose_canvas_pixel_size(monitors)
     if style == "ascii_crt":
         from otowall.ascii_composer import compose_ascii_crt_wallpaper
+
         # In ascii_crt style on virtual span, render whole canvas with ascii_crt
         return compose_ascii_crt_wallpaper(
             cover,
