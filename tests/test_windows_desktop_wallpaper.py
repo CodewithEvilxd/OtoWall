@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import time
 from pathlib import Path
@@ -87,7 +88,10 @@ def _assert_displayed_wallpaper(
     )
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="Requires interactive Windows desktop session")
+@pytest.mark.skipif(
+    sys.platform != "win32" or not os.environ.get("CI"),
+    reason="Live desktop display simulation test only runs in CI to protect local user desktop",
+)
 def test_windows_desktop_apply_and_display_simulation(tmp_path: Path):
     import ctypes
 

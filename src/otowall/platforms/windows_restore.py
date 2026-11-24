@@ -418,30 +418,46 @@ def apply_windows_restore_snapshot(
         return
 
     restore_path = snapshot.get("stable_path")
-    if not restore_path:
-        logger.warning("Windows restore snapshot has no stable_path; refusing to restore")
-        return
-    path = Path(str(restore_path))
-    if not path.is_file():
-        logger.warning("Windows restore wallpaper file missing: %s", path)
-        return
+    path: Path | None = Path(str(restore_path)) if restore_path else None
+    if path is None or not path.is_file():
+        fallback_candidates = [
+            _transcoded_wallpaper_path(),
+            _cached_files_wallpaper_path(),
+            _wallpaper_source_from_registry(),
+            Path(os.environ.get("WINDIR", r"C:\Windows"))
+            / "Web"
+            / "Wallpaper"
+            / "Windows"
+            / "img0.jpg",
+        ]
+        path = None
+        for cand in fallback_candidates:
+            if cand is not None and cand.is_file():
+                path = cand
+                logger.info("Using fallback wallpaper for restore: %s", path)
+                break
+        if path is None:
+            logger.warning("Windows restore wallpaper file missing and no fallback found")
+            return
 
     path_str = str(path.resolve())
     expected_hash = snapshot.get("content_hash")
-    if expected_hash:
-        actual = file_digest(path.read_bytes())
-        if actual != expected_hash:
-            logger.warning(
-                "Stable wallpaper digest mismatch before restore (expected %s, got %s)",
-                expected_hash,
-                actual,
-            )
+    if expected_hash and path.is_file():
+        with contextlib.suppress(Exception):
+            actual = file_digest(path.read_bytes())
+            if actual != expected_hash:
+                logger.warning(
+                    "Stable wallpaper digest mismatch before restore (expected %s, got %s)",
+                    expected_hash,
+                    actual,
+                )
 
     if snapshot.get("per_monitor") and snapshot.get("monitors"):
         for monitor_id, raw in snapshot["monitors"].items():
             mon_path = Path(raw)
-            if mon_path.is_file():
-                set_wallpaper_on_monitor(str(mon_path.resolve()), monitor_id)
+            target_str = str(mon_path.resolve()) if mon_path.is_file() else path_str
+            with contextlib.suppress(Exception):
+                set_wallpaper_on_monitor(target_str, monitor_id)
         _restore_desktop_style(snapshot)
         if background_type in {BACKGROUND_SLIDESHOW, BACKGROUND_SPOTLIGHT}:
             _write_reg_dword(

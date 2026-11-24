@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -182,14 +183,26 @@ def test_set_wallpaper_invokes_fill_style(tmp_path: Path):
 
     Image.new("RGB", (8, 8), (1, 2, 3)).save(image)
     platform = WindowsWallpaperPlatform()
-    with patch(
-        "otowall.platforms.windows_restore.apply_windows_fill_wallpaper_style",
-    ) as fill_mock:
+    with (
+        patch(
+            "otowall.platforms.windows_restore.apply_windows_fill_wallpaper_style",
+        ) as fill_mock,
+        patch(
+            "otowall.platforms.windows._set_wallpaper_on_monitor",
+        ),
+        patch(
+            "ctypes.windll.user32.SystemParametersInfoW",
+            return_value=1,
+        ),
+    ):
         platform.set_wallpaper(image)
     fill_mock.assert_called_once()
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="Windows-only")
+@pytest.mark.skipif(
+    sys.platform != "win32" or not os.environ.get("CI"),
+    reason="Live SPI smoke test only runs in CI environment to protect local user desktop",
+)
 def test_windows_wallpaper_smoke_snapshot_apply_restore(tmp_path: Path):
     """Live SPI snapshot/apply cycle on the CI desktop with byte hash verification."""
     from otowall.platforms.windows import WindowsWallpaperPlatform
