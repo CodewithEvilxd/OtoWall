@@ -6,7 +6,7 @@
 [![PyPI Version](https://img.shields.io/pypi/v/otowall?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/otowall/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/otowall?color=blue)](https://pypi.org/project/otowall/)
 [![CI Build](https://github.com/codewithevilxd/OtoWall/actions/workflows/ci.yml/badge.svg)](https://github.com/codewithevilxd/OtoWall/actions/workflows/ci.yml)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/CodewithEvilxd/OtoWall/blob/master/LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#-quick-start)
 [![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -30,7 +30,7 @@ Features realistic **1980s Retro CRT television physics** (barrel bulge curvatur
 | Style 1: Pop-Art Halftone Screen Clouds | Style 2: Manga Screentone Dither Clouds | Style 3: Retro ASCII Bayer Dither Clouds |
 |:---:|:---:|:---:|
 | **Liggi — Ritviz** | **Uff — Harshdeep Kaur** | **Senorita — ZNMD** |
-| [![Liggi](docs/wallpapers/wallpaper_liggi_ritviz.png)](docs/wallpapers/wallpaper_liggi_ritviz.png) | [![Uff](docs/wallpapers/wallpaper_uff_bang_bang.png)](docs/wallpapers/wallpaper_uff_bang_bang.png) | [![Senorita](docs/wallpapers/wallpaper_senorita_znmd.png)](docs/wallpapers/wallpaper_senorita_znmd.png) |
+| [![Liggi](https://raw.githubusercontent.com/CodewithEvilxd/OtoWall/master/docs/wallpapers/wallpaper_liggi_ritviz.png)](https://github.com/CodewithEvilxd/OtoWall/blob/master/docs/wallpapers/wallpaper_liggi_ritviz.png) | [![Uff](https://raw.githubusercontent.com/CodewithEvilxd/OtoWall/master/docs/wallpapers/wallpaper_uff_bang_bang.png)](https://github.com/CodewithEvilxd/OtoWall/blob/master/docs/wallpapers/wallpaper_uff_bang_bang.png) | [![Senorita](https://raw.githubusercontent.com/CodewithEvilxd/OtoWall/master/docs/wallpapers/wallpaper_senorita_znmd.png)](https://github.com/CodewithEvilxd/OtoWall/blob/master/docs/wallpapers/wallpaper_senorita_znmd.png) |
 | *Adaptive palette halftone dot matrix* | *High-density 45° diagonal screentone* | *8x8 Bayer ordered retro ASCII threshold* |
 
 > 💡 *All showcase wallpapers are rendered dynamically in real-time at 1080p / 1440p / 4K resolutions based on currently playing tracks.*
