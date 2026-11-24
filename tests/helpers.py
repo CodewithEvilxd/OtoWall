@@ -177,6 +177,7 @@ def make_runner(
     platform: FakePlatform,
     playback_provider: PlaybackProvider | None = None,
     sleep: MagicMock | None = None,
+    style: str = "glass",
 ) -> NowPlayingRunner:
     provider = playback_provider or MagicMock()
     return NowPlayingRunner(
@@ -187,5 +188,6 @@ def make_runner(
             state_path=tmp_path / "state.json",
             poll_interval_seconds=2.5,
             sleep=sleep,
-        )
+        ),
+        style=style,
     )

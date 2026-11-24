@@ -32,7 +32,7 @@ def compose_virtual_desktop_wallpaper(
     title: str,
     artist: str,
     monitors: list[MonitorInfo],
-    style: str = "glass",
+    style: str = "ascii_crt",
 ) -> Image.Image:
     """Build a Span-sized bitmap with one composed tile centered on each monitor."""
     if not monitors:

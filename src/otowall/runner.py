@@ -74,7 +74,7 @@ class NowPlayingRunner:
         self._restore_registered = False
         self._render_errors_logged: set[str] = set()
         self._logged_idle_no_original_restore = False
-        self._style = (style or os.environ.get("OTOWALL_STYLE", "glass")).strip().lower()
+        self._style = (style or os.environ.get("OTOWALL_STYLE", "ascii_crt")).strip().lower()
         self._poll_tick = 0
         self._last_poll_ok_monotonic = time.monotonic()
         self._last_heartbeat_monotonic = time.monotonic()
@@ -256,14 +256,15 @@ class NowPlayingRunner:
             )
         with timing.stage("save"):
             save_wallpaper(composed, tmp)
-        schedule_compose_quality_verification(
-            composed=composed,
-            cover=cover,
-            title=track.title,
-            artist=track.artist,
-            width=width,
-            height=height,
-        )
+        if self._style == "glass":
+            schedule_compose_quality_verification(
+                composed=composed,
+                cover=cover,
+                title=track.title,
+                artist=track.artist,
+                width=width,
+                height=height,
+            )
         return self._composed_cache.put(track.track_id, material, width, height, tmp)
 
     def _log_render_error_once(self, track_id: str, exc: BaseException) -> None:
@@ -395,14 +396,15 @@ class NowPlayingRunner:
                 origin_left=origin_left,
                 origin_top=origin_top,
             )
-            schedule_compose_quality_verification(
-                composed=composed.crop((x0, y0, x1, y1)),
-                cover=cover,
-                title=track.title,
-                artist=track.artist,
-                width=primary.width,
-                height=primary.height,
-            )
+            if self._style == "glass":
+                schedule_compose_quality_verification(
+                    composed=composed.crop((x0, y0, x1, y1)),
+                    cover=cover,
+                    title=track.title,
+                    artist=track.artist,
+                    width=primary.width,
+                    height=primary.height,
+                )
         return self._composed_cache.put(
             track.track_id,
             material,

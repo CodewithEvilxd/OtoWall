@@ -126,7 +126,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("ascii_crt", "glass"),
         default=None,
         help=(
-            "Wallpaper layout style: 'ascii_crt' (retro ASCII CRT TV with dither clouds) "
+            "Wallpaper layout style: 'ascii_crt' (retro ASCII CRT TV with dither clouds, default) "
             "or 'glass' (liquid glass panel)."
         ),
     )
@@ -223,7 +223,7 @@ def _run_with_lock(args: argparse.Namespace) -> int:
         return 1
 
     cache_dir = args.cache_dir or default_cache_dir()
-    style = getattr(args, "style", None) or os.environ.get("OTOWALL_STYLE", "glass")
+    style = getattr(args, "style", None) or os.environ.get("OTOWALL_STYLE", "ascii_crt")
     runner = NowPlayingRunner(
         RunnerDeps(
             platform=platform,
