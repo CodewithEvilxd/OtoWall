@@ -117,7 +117,7 @@ def extract_cover_palette(
 
     scored.sort(key=lambda x: x[0], reverse=True)
     raw_best = scored[0][1]
-    best_c: tuple[int, int, int] = (int(raw_best[0]), int(raw_best[1]), int(raw_best[2]))
+    best_c: tuple[int, int, int] = (raw_best[0], raw_best[1], raw_best[2])
 
     # Harmonize sky luminance into comfortable rich range [65, 160]
     r, g, b = best_c
