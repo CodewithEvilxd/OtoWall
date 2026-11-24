@@ -108,11 +108,16 @@ def extract_cover_palette(
 
     if not scored:
         arr = np.array(small, dtype=float)
-        mean_c = tuple(arr.mean(axis=(0, 1)).astype(int))
+        mean_c = (
+            int(arr[..., 0].mean()),
+            int(arr[..., 1].mean()),
+            int(arr[..., 2].mean()),
+        )
         scored.append((1.0, mean_c, 128, 0.5))
 
     scored.sort(key=lambda x: x[0], reverse=True)
-    best_c = scored[0][1]
+    raw_best = scored[0][1]
+    best_c: tuple[int, int, int] = (int(raw_best[0]), int(raw_best[1]), int(raw_best[2]))
 
     # Harmonize sky luminance into comfortable rich range [65, 160]
     r, g, b = best_c
@@ -120,14 +125,26 @@ def extract_cover_palette(
     target_lum = max(65.0, min(160.0, lum))
     if lum > 0:
         factor = target_lum / lum
-        sky = tuple(int(max(20, min(230, ch * factor))) for ch in (r, g, b))
+        sky: tuple[int, int, int] = (
+            int(max(20, min(230, r * factor))),
+            int(max(20, min(230, g * factor))),
+            int(max(20, min(230, b * factor))),
+        )
     else:
         sky = (40, 100, 180)
 
-    cloud_light = (255, 255, 255)
+    cloud_light: tuple[int, int, int] = (255, 255, 255)
     # Cloud shadow is a soft tint of sky mixed with pure white
-    cloud_shadow = tuple(int(sky[i] * 0.35 + cloud_light[i] * 0.65) for i in range(3))
-    accent = tuple(int(max(40, min(255, ch * 1.2 + 15))) for ch in best_c)
+    cloud_shadow: tuple[int, int, int] = (
+        int(sky[0] * 0.35 + cloud_light[0] * 0.65),
+        int(sky[1] * 0.35 + cloud_light[1] * 0.65),
+        int(sky[2] * 0.35 + cloud_light[2] * 0.65),
+    )
+    accent: tuple[int, int, int] = (
+        int(max(40, min(255, best_c[0] * 1.2 + 15))),
+        int(max(40, min(255, best_c[1] * 1.2 + 15))),
+        int(max(40, min(255, best_c[2] * 1.2 + 15))),
+    )
 
     return sky, cloud_shadow, cloud_light, accent
 
@@ -898,8 +915,8 @@ def compose_wallpaper(
 
     # 1. Scale & center-crop cover art to fill entire CRT screen
     scale_c = max(sc_w / cover.width, sc_h / cover.height)
-    cw = max(1, int(round(cover.width * scale_c)))
-    ch = max(1, int(round(cover.height * scale_c)))
+    cw = max(1, round(cover.width * scale_c))
+    ch = max(1, round(cover.height * scale_c))
     full_cover = cover.convert("RGB").resize((cw, ch), Image.Resampling.LANCZOS)
     cl = (cw - sc_w) // 2
     ct = (ch - sc_h) // 2
@@ -1005,7 +1022,7 @@ def compose_wallpaper(
 
     if clean_title or clean_artist:
         card_h = int(78 * scale)
-        card_w = int(sc_w - int(48 * scale))
+        card_w = sc_w - int(48 * scale)
         card_x = (sc_w - card_w) // 2
         card_y = sc_h - card_h - int(18 * scale)
 

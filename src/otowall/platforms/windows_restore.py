@@ -258,7 +258,7 @@ def capture_windows_restore_snapshot(
     recovering: bool = False,
 ) -> dict[str, Any]:
     """Build a restore snapshot with a stable on-disk wallpaper copy."""
-    if should_preserve_existing_snapshot(
+    if existing_snapshot and should_preserve_existing_snapshot(
         existing_snapshot,
         session_active=session_active,
         recovering=recovering,
@@ -267,7 +267,7 @@ def capture_windows_restore_snapshot(
             "Preserving existing wallpaper snapshot: %s",
             existing_snapshot.get("stable_path"),
         )
-        preserved = dict(existing_snapshot or {})
+        preserved = dict(existing_snapshot)
         preserved.setdefault("backend", "windows")
         return preserved
 
